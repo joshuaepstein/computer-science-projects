@@ -1,0 +1,17 @@
+Computer Science
+JavaScript
+Python
+Java
+Replit
+Code
+Waring
+Vyas
+Keyboard
+Mouse
+Interpreter
+Compiler
+Translator
+CPU
+Motherboard
+Memory
+GPU
