@@ -1,27 +1,29 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.WindowAdapter;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 
 public class WordsearchUI {
 
-	private JPanel rootPanel;
-	private JLabel titleLabel;
-	private JButton regenerateWordsearchButton;
-	private JPanel wordsearchPanel;
-	private JPanel wordsList;
-	private List<String> words;
-	private List<ClickedPosition> clickedPositions;
+	private final JPanel rootPanel = new JPanel();
+	private final JLabel titleLabel = new JLabel("WordSearch");
+	private final JButton regenerateWordsearchButton = new JButton("Regenerate Wordsearch");
+	private final JPanel wordsearchPanel = new JPanel();
+	private final JPanel wordsList = new JPanel();
+	private List<String> words = new ArrayList<>();
+	private List<ClickedPosition> clickedPositions = new ArrayList<>();
+	private final List<ClickedPosition> clickablePositions = new ArrayList<>();
 
 	protected class ClickedPosition {
-		private int x;
-		private int y;
+		private final int x;
+		private final int y;
 
 		public ClickedPosition(int x, int y) {
 			this.x = x;
@@ -53,6 +55,10 @@ public class WordsearchUI {
 			return null;
 		}
 
+		public boolean isInside(int x, int y, int width, int height) {
+			return this.x >= x && this.x <= x + width && this.y >= y && this.y <= y + height;
+		}
+
 		public enum Position {
 			START, END, MIDDLE
 		}
@@ -61,20 +67,78 @@ public class WordsearchUI {
 	public Map<String, List<ClickedPosition>> getWordsAndPositions() {
 		// return a map of words and their positions
 		// e.g. { "HELLO" : [ (0, 0), (0, 1), (0, 2), (0, 3), (0, 4) ] }
+		Map<String, List<ClickedPosition>> wordsAndPositions = new HashMap<>();
+		for (String word : words) {
+			// get the position of the square for the first and last letter of the word
+			int firstLetterX = -1;
+			int firstLetterY = -1;
+			int lastLetterX = -1;
+			int lastLetterY = -1;
+
+			String firstLetter = word.substring(0, 1);
+			String lastLetter = word.substring(word.length() - 1);
+			for (int i = 0; i < 400; i++) {
+				JPanel square = (JPanel) wordsearchPanel.getComponent(i);
+				JLabel label = (JLabel) square.getComponent(0);
+				if (label.getText().equals(firstLetter)) {
+					firstLetterX = i / 20;
+					firstLetterY = i % 20;
+				}
+				if (label.getText().equals(lastLetter)) {
+					lastLetterX = i / 20;
+					lastLetterY = i % 20;
+				}
+			}
+
+			int finalFirstLetterX = firstLetterX;
+			int finalFirstLetterY = firstLetterY;
+			int finalLastLetterX = lastLetterX;
+			int finalLastLetterY = lastLetterY;
+			wordsAndPositions.put(word, new ArrayList<>() {{
+				add(new ClickedPosition(finalFirstLetterX, finalFirstLetterY));
+				add(new ClickedPosition(finalLastLetterX, finalLastLetterY));
+			}});
+		}
 		return null;
 	}
 
 	public static void main(String[] args) {
-		JFrame frame = new JFrame("WordSearch");
-		frame.setContentPane(new WordsearchUI().rootPanel);
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setPreferredSize(new Dimension(600, 500));
-		frame.setResizable(false);
-		frame.pack();
-		frame.setVisible(true);
+		new WordsearchUI();
 	}
 
 	public WordsearchUI() {
+		JFrame frame = new JFrame("WordSearch");
+		frame.setContentPane(rootPanel);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.setPreferredSize(new Dimension(700, 600));
+		frame.setResizable(false);
+
+		rootPanel.setBounds(0, 0, 700, 600);
+		rootPanel.setLayout(null);
+
+		titleLabel.setBounds(0, 0, 700, 40);
+		titleLabel.setHorizontalAlignment(JLabel.CENTER);
+		titleLabel.setVerticalAlignment(JLabel.CENTER);
+		titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+		rootPanel.add(titleLabel);
+
+		regenerateWordsearchButton.setBounds((700 / 2) - (200 / 2), 40, 200, 30);
+		regenerateWordsearchButton.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+		regenerateWordsearchButton.setFont(new Font("Arial", Font.PLAIN, 15));
+		regenerateWordsearchButton.setBackground(Color.WHITE);
+		regenerateWordsearchButton.setForeground(Color.BLACK);
+		rootPanel.add(regenerateWordsearchButton);
+
+		wordsearchPanel.setBounds((700 / 2) - (200), 80, 400, 400);
+		wordsearchPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+		rootPanel.add(wordsearchPanel);
+
+		wordsList.setBounds((700 / 2) - (200), 480, 400, 100);
+		wordsList.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+		rootPanel.add(wordsList);
+
+		frame.pack();
+		frame.setVisible(true);
 		this.clickedPositions = new ArrayList<>();
 		generateWordSearch();
 
@@ -90,7 +154,7 @@ public class WordsearchUI {
 	}
 
 	private void generateWordSearch() {
-		wordsearchPanel.setLayout(new GridLayout(20, 20));
+		wordsearchPanel.setLayout(null);
 		wordsearchPanel.setPreferredSize(new Dimension(200, 200));
 		wordsearchPanel.setMinimumSize(new Dimension(200, 200));
 		wordsearchPanel.setMaximumSize(new Dimension(200, 200));
@@ -100,6 +164,7 @@ public class WordsearchUI {
 			square.setMaximumSize(new Dimension(10, 10));
 			square.setSize(new Dimension(10, 10));
 			wordsearchPanel.add(square);
+			square.setBounds((i / 20) * 20, (i % 20) * 20, 20, 20);
 			char randomLetter = randomLetter();
 			JLabel label = new JLabel(String.valueOf(randomLetter));
 			label.setFont(new Font("Arial", Font.PLAIN, 10));
@@ -107,6 +172,34 @@ public class WordsearchUI {
 			label.setHorizontalAlignment(JLabel.CENTER);
 			label.setVerticalAlignment(JLabel.CENTER);
 
+			this.clickablePositions.add(new ClickedPosition(i / 20, i % 20));
+			label.addMouseListener(new MouseListener() {
+				@Override
+				public void mouseClicked(MouseEvent e) {
+					// add to clicked positions
+
+				}
+
+				@Override
+				public void mousePressed(MouseEvent e) {
+
+				}
+
+				@Override
+				public void mouseReleased(MouseEvent e) {
+
+				}
+
+				@Override
+				public void mouseEntered(MouseEvent e) {
+
+				}
+
+				@Override
+				public void mouseExited(MouseEvent e) {
+
+				}
+			});
 		}
 		attemptToInsertWords();
 		wordsearchPanel.revalidate();
@@ -183,6 +276,18 @@ public class WordsearchUI {
 			}
 
 			if (x < 0 || x >= 20 || y < 0 || y >= 20) {
+				//TODO
+				// undo adding the word
+				System.out.println("Word letter could not be placed (Word: " + word + ", Letter: " + word.charAt(i) + ", X: " + x + ", Y: " + y + ", Direction: " + direction + ")");
+				for (char letter : word.toCharArray()) {
+					if (word.indexOf(letter) < i) {
+						// This should undo the previous letters.
+						JPanel square = (JPanel) wordsearchPanel.getComponent(x * 20 + y);
+						JLabel label = (JLabel) square.getComponent(0);
+						label.setText(String.valueOf(randomLetter()).toLowerCase());
+						System.out.println("Removed " + letter + " at " + x + ", " + y);
+					}
+				}
 				return;
 			}
 			JPanel square = (JPanel) wordsearchPanel.getComponent(x * 20 + y);
