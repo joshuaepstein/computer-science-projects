@@ -99,11 +99,14 @@ public class WordsearchUI {
 			int finalLastLetterX = lastLetterX;
 			int finalLastLetterY = lastLetterY;
 			wordsAndPositions.put(word, new ArrayList<>() {{
-				add(new ClickedPosition(finalFirstLetterX, finalFirstLetterY));
-				add(new ClickedPosition(finalLastLetterX, finalLastLetterY));
+				add(new ClickedPosition(finalFirstLetterX, finalFirstLetterY, firstLetter, word));
+				add(new ClickedPosition(finalLastLetterX, finalLastLetterY, lastLetter, word));
 			}});
+			wordsAndPositions.getOrDefault(word, new ArrayList<>()).forEach((clicked) -> {
+				System.out.println(clicked.letter + "  " + clicked.word + " | " + word);
+			});
 		}
-		return null;
+		return wordsAndPositions;
 	}
 
 	public static void main(String[] args) {
@@ -176,7 +179,7 @@ public class WordsearchUI {
 			label.setHorizontalAlignment(JLabel.CENTER);
 			label.setVerticalAlignment(JLabel.CENTER);
 
-			this.clickablePositions.add(new ClickedPosition(i / 20, i % 20));
+//			this.clickablePositions.add(new ClickedPosition(i / 20, i % 20, randomLetter, ));
 			label.addMouseListener(new MouseListener() {
 				@Override
 				public void mouseClicked(MouseEvent e) {
@@ -245,7 +248,7 @@ public class WordsearchUI {
 		return true;
 	}
 
-	private void place(String word, int x, int y, int direction) {
+	private void place(final String word, int x, int y, int direction) {
 		// Place the word in the array
 		for (int i = 0; i < word.length(); i++) {
 			switch (direction) {
@@ -299,43 +302,76 @@ public class WordsearchUI {
 			label.setText(String.valueOf(word.charAt(i)).toLowerCase());
 			System.out.println("Placed " + word.charAt(i) + " at " + x + ", " + y);
 
-			final int finalX = x;
-			final int finalY = y;
-			label.addMouseListener(new MouseListener() {
+			final int finalI = i;
+			square.addMouseListener(new MouseListener() {
 				@Override
 				public void mouseClicked(MouseEvent e) {
-					System.out.println("Clicked " + label.getText() + " at " + finalX + ", " + finalY);
-					ClickedPosition clickedPosition = new ClickedPosition(finalX, finalY);
-					if (clickedPositions.stream().anyMatch((clicked) -> {
-						return clickedPosition.isInside(clicked.getX() - 1, clicked.getY() - 1, 10, 10);
-					})) {
-						clickedPositions.remove(clickedPosition);
+					final char letter = word.charAt(finalI);
+					final int x = finalI / 20;
+					final int y = finalI % 20;
+					if (clickedPositions.stream().anyMatch(clicked -> clicked.letter == String.valueOf(letter) && clicked.word.equals(word) && new ClickedPosition(clicked.getX(), clicked.getY(), String.valueOf(letter), word).isInside(x, y, 20, 20))) {
+						// remove letter from the clicked positions
+						clickedPositions.removeIf(clicked -> clicked.letter == String.valueOf(letter) && clicked.word.equals(word) && new ClickedPosition(clicked.getX(), clicked.getY(), String.valueOf(letter), word).isInside(x, y, 20, 20));
 						label.setForeground(Color.BLACK);
+						square.setBackground(Color.WHITE);
 					} else {
-						clickedPositions.add(clickedPosition);
-						label.setForeground(Color.RED);
+						// add letter to the clicked positions
+						clickedPositions.add(new ClickedPosition(x, y, String.valueOf(letter), word));
+						label.setForeground(Color.WHITE);
+						square.setBackground(Color.BLACK);
 					}
-					label.repaint();
+
+//					if the whole word has been completed
+					int allClicked = 0;
+					if (clickedPositions.stream().filter(clicked -> clicked.word.equals(word)).count() + 1 == word.length()) {
+						System.out.println("Completed word " + word);
+						for (Component component : wordsList.getComponents()) {
+							if (component instanceof JLabel) {
+								JLabel label = (JLabel) component;
+								if (label.getText().equals(word)) {
+									label.setForeground(Color.GREEN);
+								}
+
+								if (label.getForeground() == Color.GREEN) {
+									allClicked += 1;
+								}
+							}
+						}
+					}
+
+					if (allClicked == wordsList.getComponentCount()) {
+						JOptionPane.showMessageDialog(null, "You have completed the wordsearch!", "Congratulations!", JOptionPane.INFORMATION_MESSAGE);
+
+						wordsearchPanel.removeAll();
+						wordsList.removeAll();
+
+						wordsList.repaint();
+						wordsearchPanel.repaint();
+
+						generateWordSearch();
+					}
+
+
 				}
 
 				@Override
 				public void mouseEntered(MouseEvent e) {
-					
+
 				}
 
 				@Override
 				public void mouseExited(MouseEvent e) {
-					
+
 				}
 
 				@Override
 				public void mousePressed(MouseEvent e) {
-					
+
 				}
 
 				@Override
 				public void mouseReleased(MouseEvent e) {
-					
+
 				}
 			});
 			label.repaint();
