@@ -24,10 +24,14 @@ public class WordsearchUI {
 	protected class ClickedPosition {
 		private final int x;
 		private final int y;
+		private final String letter;
+		private final String word;
 
-		public ClickedPosition(int x, int y) {
+		public ClickedPosition(int x, int y, String letter, String word) {
 			this.x = x;
 			this.y = y;
+			this.letter = letter;
+			this.word = word;
 		}
 
 		public int getX() { return x; }
@@ -294,6 +298,47 @@ public class WordsearchUI {
 			JLabel label = (JLabel) square.getComponent(0);
 			label.setText(String.valueOf(word.charAt(i)).toLowerCase());
 			System.out.println("Placed " + word.charAt(i) + " at " + x + ", " + y);
+
+			final int finalX = x;
+			final int finalY = y;
+			label.addMouseListener(new MouseListener() {
+				@Override
+				public void mouseClicked(MouseEvent e) {
+					System.out.println("Clicked " + label.getText() + " at " + finalX + ", " + finalY);
+					ClickedPosition clickedPosition = new ClickedPosition(finalX, finalY);
+					if (clickedPositions.stream().anyMatch((clicked) -> {
+						return clickedPosition.isInside(clicked.getX() - 1, clicked.getY() - 1, 10, 10);
+					})) {
+						clickedPositions.remove(clickedPosition);
+						label.setForeground(Color.BLACK);
+					} else {
+						clickedPositions.add(clickedPosition);
+						label.setForeground(Color.RED);
+					}
+					label.repaint();
+				}
+
+				@Override
+				public void mouseEntered(MouseEvent e) {
+					
+				}
+
+				@Override
+				public void mouseExited(MouseEvent e) {
+					
+				}
+
+				@Override
+				public void mousePressed(MouseEvent e) {
+					
+				}
+
+				@Override
+				public void mouseReleased(MouseEvent e) {
+					
+				}
+			});
+			label.repaint();
 		}
 
 		JLabel wordForList = new JLabel(word);
